@@ -272,7 +272,7 @@ function MessageBox:AddMessage(contact, message, isOutgoing)
     MessageBox.conversationOrderDirty = true
 
     -- Crash save: append this message to the journal (cheap) instead of
-    -- re-serializing the whole history (PERF, modif. locale)
+    -- re-serializing the whole history (PERF)
     MessageBox.crashSaveDirty = true
     if MessageBox.hasNampower then
         MessageBox:JournalMessage(contact, message, c.times[c.count], isOutgoing, false)

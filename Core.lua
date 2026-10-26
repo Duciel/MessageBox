@@ -277,13 +277,13 @@ MessageBox.themes = {
 
 -- Nampower Crash-Save: Serialization & File I/O
 --
--- PERF (modif. locale) : l'ancienne version re-serialisait TOUT l'historique
--- a chaque chuchotement (plusieurs Mo de chaines => gel de 100 ms et plus).
--- Desormais :
---   * chaque message est AJOUTE a un petit journal (WriteCustomFile mode "a") ;
---   * l'instantane complet n'est ecrit que toutes les 5 min, hors combat ;
---   * la serialisation remplit un seul buffer (pas de chaines imbriquees).
--- Recuperation apres crash : instantane (s'il existe) + rejeu du journal.
+-- PERF: the previous version re-serialized the WHOLE history on every whisper
+-- (several MB of strings => freezes of 100 ms or more).
+-- Now:
+--   * each message is APPENDED to a small journal (WriteCustomFile mode "a");
+--   * the full snapshot is only written every 5 min, out of combat;
+--   * serialization fills a single buffer (no nested string concatenation).
+-- Crash recovery: snapshot (if any) + replay of the journal.
 
 local function SerializeInto(buf, n, val)
     local t = type(val)
@@ -439,7 +439,7 @@ function MessageBox:ReplayJournal()
 
     local func = loadstring(raw)
     if not func then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff3cb7f0Message|rBox: journal illisible, ignore.")
+        DEFAULT_CHAT_FRAME:AddMessage("|cff3cb7f0Message|rBox: journal unreadable, ignored.")
         return 0
     end
     local n = 0
@@ -518,7 +518,7 @@ function MessageBox:AttemptCrashRecovery()
     -- Messages received after the last snapshot (or since the last clean exit)
     local replayed = self:ReplayJournal()
     if replayed > 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff3cb7f0Message|rBox: " .. replayed .. " element(s) du journal recupere(s) apres un crash.")
+        DEFAULT_CHAT_FRAME:AddMessage("|cff3cb7f0Message|rBox: " .. replayed .. " journal entry(ies) recovered after a crash.")
         -- consolidate once so that a second crash does not replay twice
         self:FlushToDisk()
     end

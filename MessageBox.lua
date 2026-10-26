@@ -48,7 +48,7 @@ function MessageBox:OnLoad()
         -- Periodic crash save flush
         if MessageBox.hasNampower then
             MessageBox.flushElapsed = (MessageBox.flushElapsed or 0) + 1
-            -- full snapshot: rarely, and never in combat (PERF, modif. locale)
+            -- full snapshot: rarely, and never in combat (PERF)
             if MessageBox.flushElapsed >= MessageBox.FLUSH_INTERVAL
                and not UnitAffectingCombat("player") then
                 MessageBox.flushElapsed = 0
