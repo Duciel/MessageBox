@@ -393,6 +393,14 @@ function MessageBox:UpdateChatHeader()
     self.chatHeader.metaTopText:SetText("Total Messages: " .. msgCount)
 end
 
+-- Remember where the main window was left, so it reopens there after /reload or relog
+function MessageBox:SaveFramePosition()
+    if not self.frame or not self.settings then return end
+    local point, _, relativePoint, x, y = self.frame:GetPoint()
+    if not point then return end
+    self.settings.framePosition = { point = point, relativePoint = relativePoint, x = x, y = y }
+end
+
 function MessageBox:CreateFrame()
     if MessageBox.frame then
         return
@@ -402,7 +410,12 @@ function MessageBox:CreateFrame()
     local L = MessageBox.layout
     frame:SetWidth(L.MAIN_WIDTH)
     frame:SetHeight(L.MAIN_HEIGHT)
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    local savedPos = MessageBox.settings and MessageBox.settings.framePosition
+    if savedPos and savedPos.point then
+        frame:SetPoint(savedPos.point, UIParent, savedPos.relativePoint or savedPos.point, savedPos.x or 0, savedPos.y or 0)
+    else
+        frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    end
     frame:SetFrameStrata("MEDIUM")
     frame:SetToplevel(true)
     frame:SetMovable(true)
@@ -416,6 +429,7 @@ function MessageBox:CreateFrame()
     end)
     frame:SetScript("OnMouseUp", function()
         frame:StopMovingOrSizing()
+        MessageBox:SaveFramePosition()
     end)
     frame:SetScript("OnSizeChanged", function()
         MessageBox.relayoutDirty = true
@@ -556,7 +570,10 @@ function MessageBox:CreateFrame()
     resizeButton:SetPushedTexture(MessageBox.textures.sizeDown)
     resizeButton:SetHighlightTexture(MessageBox.textures.sizeHi)
     resizeButton:SetScript("OnMouseDown", function() this:GetParent():StartSizing("BOTTOMRIGHT") end)
-    resizeButton:SetScript("OnMouseUp", function() this:GetParent():StopMovingOrSizing() end)
+    resizeButton:SetScript("OnMouseUp", function()
+        this:GetParent():StopMovingOrSizing()
+        MessageBox:SaveFramePosition()
+    end)
 
     MessageBox:CreateChatHeader(chatFrame)
 
