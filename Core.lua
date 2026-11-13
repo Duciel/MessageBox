@@ -162,6 +162,119 @@ function MessageBox:NewConversation()
     }
 end
 
+-- Contact name normalization --------------------------------------------------
+-- Whisper names can reach us in different cases ("Skiddler" vs "skiddler");
+-- conversations are keyed by name, so each case used to get its own entry.
+
+-- Upper-case the first letter of a plain ASCII name ("skiddler" -> "Skiddler")
+function MessageBox:CapitalizeName(name)
+    if not name or name == "" then return name end
+    local first = string.sub(name, 1, 1)
+    if first >= "a" and first <= "z" then
+        return string.upper(first) .. string.sub(name, 2)
+    end
+    return name
+end
+
+-- Return the key under which this player's conversation is (or will be) stored:
+-- an existing entry matched case-insensitively, otherwise the capitalized name.
+function MessageBox:ResolveContact(name)
+    if not name or not self.conversations then return name end
+    if self.conversations[name] then return name end
+    local lname = string.lower(name)
+    for key, _ in pairs(self.conversations) do
+        if type(key) == "string" and string.lower(key) == lname then
+            return key
+        end
+    end
+    return self:CapitalizeName(name)
+end
+
+-- Merge conversations that only differ by letter case into a single entry
+-- (messages interleaved by time, unread counts added, pinned if any was pinned).
+function MessageBox:MergeDuplicateConversations()
+    local convos = self.conversations
+    if not convos then return end
+
+    local groups = {}
+    for key, _ in pairs(convos) do
+        if type(key) == "string" then
+            local lk = string.lower(key)
+            if not groups[lk] then groups[lk] = {} end
+            table.insert(groups[lk], key)
+        end
+    end
+
+    local changed = false
+    for _, keys in pairs(groups) do
+        local numKeys = table.getn(keys)
+        if numKeys > 1 then
+            table.sort(keys)
+
+            -- Keep the properly capitalized spelling if there is one
+            local canon = nil
+            for i = 1, numKeys do
+                local first = string.sub(keys[i], 1, 1)
+                if first ~= string.lower(first) then canon = keys[i]; break end
+            end
+            if not canon then canon = self:CapitalizeName(keys[1]) end
+
+            local entries = {}
+            local pinned = false
+            local unread = 0
+            for i = 1, numKeys do
+                local k = keys[i]
+                local c = convos[k]
+                if c and c.messages then
+                    local n = self:GetCount(c)
+                    for j = 1, n do
+                        table.insert(entries, {
+                            m = c.messages[j],
+                            t = tonumber(c.times and c.times[j]) or 0,
+                            o = (c.outgoing and c.outgoing[j]) and true or false,
+                            s = (c.system and c.system[j]) and true or false,
+                            seq = table.getn(entries) + 1
+                        })
+                    end
+                    if c.pinned then pinned = true end
+                end
+                if self.unreadCounts and self.unreadCounts[k] then
+                    unread = unread + (tonumber(self.unreadCounts[k]) or 0)
+                end
+            end
+
+            table.sort(entries, function(a, b)
+                if a.t ~= b.t then return a.t < b.t end
+                return a.seq < b.seq
+            end)
+
+            local merged = self:NewConversation()
+            for i = 1, table.getn(entries) do
+                local e = entries[i]
+                table.insert(merged.messages, e.m)
+                table.insert(merged.times, e.t)
+                table.insert(merged.outgoing, e.o)
+                table.insert(merged.system, e.s)
+            end
+            merged.count = table.getn(entries)
+            merged.pinned = pinned
+
+            for i = 1, numKeys do
+                convos[keys[i]] = nil
+                if self.unreadCounts then self.unreadCounts[keys[i]] = nil end
+            end
+            convos[canon] = merged
+            if self.unreadCounts and unread > 0 then self.unreadCounts[canon] = unread end
+            changed = true
+        end
+    end
+
+    if changed then
+        self.conversationOrderDirty = true
+        self.crashSaveDirty = true
+    end
+end
+
 -- Default settings
 MessageBox.defaultSettings = {
     friendsListCollapsed = false,

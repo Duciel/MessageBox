@@ -256,6 +256,7 @@ end
 
 function MessageBox:AddMessage(contact, message, isOutgoing)
     if not self.conversations then return end
+    contact = self:ResolveContact(contact)
 
     if not self.conversations[contact] then
         self.conversations[contact] = self:NewConversation()
@@ -322,6 +323,7 @@ function MessageBox:AddMessage(contact, message, isOutgoing)
 end
 
 function MessageBox:AddSystemMessage(contact, message, isTransient)
+    contact = self:ResolveContact(contact)
     if not self.conversations[contact] then
         self.conversations[contact] = self:NewConversation()
     end
@@ -367,6 +369,7 @@ function MessageBox:AddSystemMessage(contact, message, isTransient)
 end
 
 function MessageBox:RemoveLastMessage(contact)
+    contact = self:ResolveContact(contact)
     if not self.conversations or not self.conversations[contact] then return end
     
     local c = self.conversations[contact]

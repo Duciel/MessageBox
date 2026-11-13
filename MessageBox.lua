@@ -95,6 +95,9 @@ function MessageBox:OnEvent(event)
             MessageBox:AttemptCrashRecovery()
         end
 
+        -- Merge conversations that only differ by name case (e.g. "Skiddler" / "skiddler")
+        MessageBox:MergeDuplicateConversations()
+
         -- Register PLAYER_LOGOUT to mark a clean exit
         MessageBox.eventFrame:RegisterEvent("PLAYER_LOGOUT")
 
@@ -140,7 +143,7 @@ function MessageBox:OnEvent(event)
 
     elseif event == "CHAT_MSG_WHISPER" then
         local message = arg1
-        local sender = arg2
+        local sender = MessageBox:ResolveContact(arg2)
         
         -- arg6 == "GM" means the sender is a Game Master
         if arg6 == "GM" then
@@ -160,7 +163,7 @@ function MessageBox:OnEvent(event)
 
     elseif event == "CHAT_MSG_WHISPER_INFORM" then
         local message = arg1
-        local recipient = arg2
+        local recipient = MessageBox:ResolveContact(arg2)
         
         -- arg6 == "GM" means the recipient is a Game Master
         if arg6 == "GM" then
@@ -200,6 +203,7 @@ function MessageBox:OnEvent(event)
         local _, _, playerName = string.find(sysMessage, "No player named '(.+)' is currently playing.")
         
         if playerName then
+            playerName = MessageBox:ResolveContact(playerName)
             local convo = MessageBox.conversations[playerName]
             if convo and convo.messages and MessageBox:GetCount(convo) > 0 then
                 local count = MessageBox:GetCount(convo)
@@ -220,7 +224,7 @@ function MessageBox:OnEvent(event)
     
     elseif event == "CHAT_MSG_AFK" then
         local message = arg1
-        local sender = arg2
+        local sender = MessageBox:ResolveContact(arg2)
         if sender and MessageBox.conversations[sender] then
             if not MessageBox.playerCache[sender] then MessageBox.playerCache[sender] = {} end
             MessageBox.playerCache[sender].status = "<AFK>"
@@ -232,7 +236,7 @@ function MessageBox:OnEvent(event)
     
     elseif event == "CHAT_MSG_DND" then
         local message = arg1
-        local sender = arg2
+        local sender = MessageBox:ResolveContact(arg2)
         if sender and MessageBox.conversations[sender] then
             if not MessageBox.playerCache[sender] then MessageBox.playerCache[sender] = {} end
             MessageBox.playerCache[sender].status = "<DND>"

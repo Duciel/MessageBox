@@ -1236,6 +1236,7 @@ end
 
 function MessageBox:SelectContact(contact)
     if not contact then return end
+    contact = MessageBox:ResolveContact(contact)
     
     -- Close search bar when switching contacts
     if MessageBox.chatSearchActive then

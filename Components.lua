@@ -977,6 +977,7 @@ end
 -- Detached Windows
 function MessageBox:OpenDetachedWindow(contact)
     if not contact then return end
+    contact = self:ResolveContact(contact)
     
     if self.detachedWindows[contact] then
         self.detachedWindows[contact]:Show()
