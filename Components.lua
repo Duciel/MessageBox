@@ -63,6 +63,8 @@ function MessageBox:CreateMinimapButton()
             this:SetScript("OnUpdate", nil)
         elseif arg1 == "LeftButton" then
             MessageBox:ToggleFrame()
+        elseif arg1 == "MiddleButton" then
+            MessageBox:MarkAllAsRead()
         end
     end)
     
@@ -70,6 +72,7 @@ function MessageBox:CreateMinimapButton()
         GameTooltip:SetOwner(this, "ANCHOR_LEFT")
         GameTooltip:SetText("MessageBox")
         GameTooltip:AddLine("Left-Click to Open", 1, 1, 1)
+        GameTooltip:AddLine("Middle-Click to Mark All as Read", 1, 1, 1)
         GameTooltip:AddLine("Shift-Drag to Move", 0.7, 0.7, 0.7)
         GameTooltip:Show()
     end)
@@ -113,6 +116,20 @@ function MessageBox:UpdateMinimapPosition()
     local radius = 80
     
     self.minimapButton:SetPoint("CENTER", "Minimap", "CENTER", -1 * radius * cos, -1 * radius * sin)
+end
+
+-- Mark every conversation as read (middle-click on the minimap button / unread icon)
+function MessageBox:MarkAllAsRead()
+    if self.unreadCounts then
+        for contact, _ in pairs(self.unreadCounts) do
+            self.unreadCounts[contact] = 0
+        end
+    end
+    GameTooltip:Hide()
+    self:UpdateMinimapBadge()
+    if self.frame and self.frame:IsVisible() then
+        self:UpdateContactList()
+    end
 end
 
 function MessageBox:UpdateMinimapBadge()
@@ -778,6 +795,8 @@ function MessageBox:CreateNotificationPopup()
             else
                 MessageBox:ShowFrame()
             end
+        elseif arg1 == "MiddleButton" then
+            MessageBox:MarkAllAsRead()
         end
     end)
     
@@ -835,6 +854,7 @@ function MessageBox:CreateNotificationPopup()
         else
              GameTooltip:AddLine("Click to open", 0.7, 0.7, 0.7)
         end
+        GameTooltip:AddLine("Middle-click to mark all as read", 0.5, 0.5, 0.5)
         GameTooltip:AddLine("Shift-Drag to move", 0.5, 0.5, 0.5)
         GameTooltip:Show()
     end)
