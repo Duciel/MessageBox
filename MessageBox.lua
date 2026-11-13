@@ -182,10 +182,18 @@ function MessageBox:OnEvent(event)
             if count > 0 then
                 -- Strip color codes for comparison in case the server
                 -- returns a modified version (TurtleWoW GM whispers)
+                -- The server also collapses repeated spaces and trims the message,
+                -- so ignore whitespace differences ("what do  you" vs "what do you")
                 local storedMsg = string.gsub(convo.messages[count], "|c%x%x%x%x%x%x%x%x", "")
                 storedMsg = string.gsub(storedMsg, "|r", "")
+                storedMsg = string.gsub(storedMsg, "%s+", " ")
+                storedMsg = string.gsub(storedMsg, "^ ", "")
+                storedMsg = string.gsub(storedMsg, " $", "")
                 local incomingMsg = string.gsub(message, "|c%x%x%x%x%x%x%x%x", "")
                 incomingMsg = string.gsub(incomingMsg, "|r", "")
+                incomingMsg = string.gsub(incomingMsg, "%s+", " ")
+                incomingMsg = string.gsub(incomingMsg, "^ ", "")
+                incomingMsg = string.gsub(incomingMsg, " $", "")
                 
                 if convo.outgoing[count] and storedMsg == incomingMsg then
                     return
